@@ -8,6 +8,8 @@ import os
 import requests
 import csv
 import lxml
+import math
+import random
 
 class wikipediaPage:
     name = ''
@@ -22,20 +24,41 @@ def scrape(aUrl):
     soup = BeautifulSoup(page, 'lxml')
     newPage = wikipediaPage()
     newPage.name = soup.find('h1').text
-    pageContent = soup.find('div', id="mw-content-text")
-    pagePs = pageContent.find_all('p')
-    pageAs = list(map(getAs, pagePs))
+    pageAs = soup.find('div', id="mw-content-text").find_all('a', limit=50)
     pageHrefs = list(map(getLink, pageAs))
-    print(pageHrefs)
+    filteredPageHrefs = list(filter(lambda s: s != None , pageHrefs))
+    pageHrefsWithHttp = list(map(addHttp , filteredPageHrefs))
+    newPage.nodes = pageHrefsWithHttp
+    randomNumber = random.randint(2,4)
+    selectedNumber = len(newPage.nodes)/(randomNumber)
+    print("length " + str(len(newPage.nodes)))
+    print("divided by " + str(randomNumber) )
 
+    floorNumber = math.floor( selectedNumber )
+    print("floorNumber is" + str(floorNumber))
+    selectedPage = newPage.nodes[floorNumber]
+    if selectedPage == None:
+        selectedPage = newPage.nodes[3]
+        scrape(selectedPage)
+    print(selectedPage)
+    scrape( selectedPage )
+
+
+def addHttp(a):
+    a = str("http://wikipedia.org" + a)
+    return a
 
 def getAs(a):
     if(a.find("a")!=None):
         return a.find("a")
 
 def getLink(a):
-    if a != None and a.get("href")!=None and a.get("href").startswith("/wiki/"):
+    if a.get("href")!=None and a.get("href").startswith("/wiki/") and not(a.get("href").endswith(".jpg" or ".svg" or ".jpeg")):
         return a.get("href")
+
+def isNotNone(a):
+    if a != None:
+        return True
 
 def log(a):
     print(":::::" + a)
