@@ -10,6 +10,7 @@ import csv
 import lxml
 import math
 import random
+import threading
 
 class wikipediaPage:
     name = ''
@@ -20,6 +21,7 @@ initialUrl = "http://en.wikipedia.org/wiki/GitHub"
 
 
 def scrape(aUrl):
+    print(threading.active_count())
     page = requests.get(aUrl).text
     soup = BeautifulSoup(page, 'lxml')
     newPage = wikipediaPage()
@@ -33,15 +35,22 @@ def scrape(aUrl):
     selectedNumber = len(newPage.nodes)/(randomNumber)
     print("length " + str(len(newPage.nodes)))
     print("divided by " + str(randomNumber) )
-
     floorNumber = math.floor( selectedNumber )
     print("floorNumber is" + str(floorNumber))
     selectedPage = newPage.nodes[floorNumber]
     if selectedPage == None:
         selectedPage = newPage.nodes[3]
-        scrape(selectedPage)
+        ts = threading.Thread(target = scrape , args=[selectedPage] )
+        tsh = threading.Thread(scrape, args=[newPage.nodes[4]])
+        tsh.start()
+        # ts.setName(selectedPage)
+        ts.start()
     print(selectedPage)
-    scrape( selectedPage )
+    ts  = threading.Thread( target = scrape , args=[selectedPage] )
+    tsc = threading.Thread(target = scrape , args=[newPage.nodes[floorNumber+1]])
+    tsc.start()
+    # ts.setName(selectedPage)
+    ts.start()
 
 
 def addHttp(a):
@@ -63,4 +72,6 @@ def isNotNone(a):
 def log(a):
     print(":::::" + a)
 
-scrape(initialUrl)
+tsc = threading.Thread(target = scrape , args=[initialUrl] )
+tsc.setName(initialUrl)
+tsc.start()
