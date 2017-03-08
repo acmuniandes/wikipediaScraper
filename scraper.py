@@ -11,33 +11,58 @@ import lxml
 import math
 import random
 import threading
+import networkx as nx
+import matplotlib as plt
+import pygraphviz
+
+plt.use("Agg")
+G=nx.Graph()
+G.add_node(1)
+
 
 class wikipediaPage:
     name = ''
     link = ''
-    nodes = ''
+    nodes = []
+    id = ''
+    sons=[]
 
 initialUrl = "http://en.wikipedia.org/wiki/GitHub"
+numfoto=0
 
 
 def scrape(aUrl):
-    print(threading.active_count())
     page = requests.get(aUrl).text
     soup = BeautifulSoup(page, 'lxml')
     newPage = wikipediaPage()
+    newPage.link = aUrl
+    newPage.id = hash(aUrl)
+    G.add_node(newPage.id)
     newPage.name = soup.find('h1').text
     pageAs = soup.find('div', id="mw-content-text").find_all('a', limit=50)
     pageHrefs = list(map(getLink, pageAs))
     filteredPageHrefs = list(filter(lambda s: s != None , pageHrefs))
     pageHrefsWithHttp = list(map(addHttp , filteredPageHrefs))
     newPage.nodes = pageHrefsWithHttp
+    newPage.sons = list( map(lambda x: hash(x) , newPage.nodes ) )
+    edges = list(map(lambda x: (newPage.id , x ) , newPage.sons ))
+    G.add_edges_from( edges )
+    print(type(G))
+    K5=nx.complete_graph(5)
+    A=nx.drawing.nx_agraph.to_agraph(K5)
+    # A=nx.to_agraph(G)
+    pos = nx.drawing.nx_agraph.graphviz_layout(A)
+    A.draw('file.dot')
+    # figura = nx.draw_random(G)
+    # plt.pyplot.show()
+    # global numfoto
+    # plt.pyplot.savefig("fotos/" + str(numfoto) + "path.pdf", linewidth=30.0)
+    # numfoto += 1
     randomNumber = random.randint(2,4)
     selectedNumber = len(newPage.nodes)/(randomNumber)
-    print("length " + str(len(newPage.nodes)))
-    print("divided by " + str(randomNumber) )
     floorNumber = math.floor( selectedNumber )
-    print("floorNumber is" + str(floorNumber))
     selectedPage = newPage.nodes[floorNumber]
+    writePage(newPage)
     if selectedPage == None:
         selectedPage = newPage.nodes[3]
         ts = threading.Thread(target = scrape , args=[selectedPage] )
@@ -51,6 +76,14 @@ def scrape(aUrl):
     tsc.start()
     # ts.setName(selectedPage)
     ts.start()
+
+
+
+def writePage(aPage):
+    with open('results.csv','a') as csvfile:
+        fieldnames = ['id','sons' , 'name' , 'link', 'nodes']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writerow({'id':aPage.id, 'sons':aPage.sons, 'name': aPage.name , 'link':aPage.link, 'nodes':aPage.nodes })
 
 
 def addHttp(a):
