@@ -13,7 +13,7 @@ import random
 import threading
 import networkx as nx
 import matplotlib as plt
-import pygraphviz
+
 
 plt.use("Agg")
 G=nx.Graph()
@@ -47,17 +47,11 @@ def scrape(aUrl):
     newPage.sons = list( map(lambda x: hash(x) , newPage.nodes ) )
     edges = list(map(lambda x: (newPage.id , x ) , newPage.sons ))
     G.add_edges_from( edges )
-    print(type(G))
-    K5=nx.complete_graph(5)
-    A=nx.drawing.nx_agraph.to_agraph(K5)
-    # A=nx.to_agraph(G)
-    pos = nx.drawing.nx_agraph.graphviz_layout(A)
-    A.draw('file.dot')
-    # figura = nx.draw_random(G)
-    # plt.pyplot.show()
-    # global numfoto
-    # plt.pyplot.savefig("fotos/" + str(numfoto) + "path.pdf", linewidth=30.0)
-    # numfoto += 1
+    figura = nx.draw_random(G)
+    plt.pyplot.show()
+    global numfoto
+    plt.pyplot.savefig("fotos/" + str(numfoto) + "path.pdf", linewidth=30.0)
+    numfoto += 1
     randomNumber = random.randint(2,4)
     selectedNumber = len(newPage.nodes)/(randomNumber)
     floorNumber = math.floor( selectedNumber )
