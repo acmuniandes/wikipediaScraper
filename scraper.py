@@ -11,14 +11,7 @@ import lxml
 import math
 import random
 import threading
-import networkx as nx
-import matplotlib as plt
-
-
-plt.use("Agg")
-G=nx.Graph()
-G.add_node(1)
-
+import json
 
 class wikipediaPage:
     name = ''
@@ -26,9 +19,14 @@ class wikipediaPage:
     nodes = []
     id = ''
     sons=[]
+    group = 1
+
+data = {}
+data['nodes'] = []
+data['links'] = []
+
 
 initialUrl = "http://en.wikipedia.org/wiki/GitHub"
-numfoto=0
 
 
 def scrape(aUrl):
@@ -37,7 +35,6 @@ def scrape(aUrl):
     newPage = wikipediaPage()
     newPage.link = aUrl
     newPage.id = hash(aUrl)
-    G.add_node(newPage.id)
     newPage.name = soup.find('h1').text
     pageAs = soup.find('div', id="mw-content-text").find_all('a', limit=50)
     pageHrefs = list(map(getLink, pageAs))
@@ -46,12 +43,9 @@ def scrape(aUrl):
     newPage.nodes = pageHrefsWithHttp
     newPage.sons = list( map(lambda x: hash(x) , newPage.nodes ) )
     edges = list(map(lambda x: (newPage.id , x ) , newPage.sons ))
-    G.add_edges_from( edges )
-    figura = nx.draw_random(G)
-    plt.pyplot.show()
-    global numfoto
-    plt.pyplot.savefig("fotos/" + str(numfoto) + "path.pdf", linewidth=30.0)
-    numfoto += 1
+    addNode(newPage.id)
+    toAddNodes = list(map(lambda x: addNode(x) , newPage.sons ))
+    links = list(map(lambda x: addEdge(newPage.id , x ) , newPage.sons ))
     randomNumber = random.randint(2,4)
     selectedNumber = len(newPage.nodes)/(randomNumber)
     floorNumber = math.floor( selectedNumber )
@@ -59,17 +53,19 @@ def scrape(aUrl):
     writePage(newPage)
     if selectedPage == None:
         selectedPage = newPage.nodes[3]
+        scrape(selectedPage)
         ts = threading.Thread(target = scrape , args=[selectedPage] )
         tsh = threading.Thread(scrape, args=[newPage.nodes[4]])
-        tsh.start()
-        # ts.setName(selectedPage)
-        ts.start()
+        # tsh.start()
+        # # ts.setName(selectedPage)
+        # ts.start()
     print(selectedPage)
+    scrape(selectedPage)
     ts  = threading.Thread( target = scrape , args=[selectedPage] )
     tsc = threading.Thread(target = scrape , args=[newPage.nodes[floorNumber+1]])
-    tsc.start()
+    # tsc.start()
     # ts.setName(selectedPage)
-    ts.start()
+    # ts.start()
 
 
 
@@ -79,6 +75,22 @@ def writePage(aPage):
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writerow({'id':aPage.id, 'sons':aPage.sons, 'name': aPage.name , 'link':aPage.link, 'nodes':aPage.nodes })
 
+def addNode(newNodeId):
+    data['nodes'].append({
+        'id': newNodeId,
+        'group': 1
+    })
+    with open('file.json', 'w') as outfile:
+        json.dump(data, outfile)
+
+def addEdge(fromNodeId , toNodeId):
+    data['links'].append({
+        'source': fromNodeId,
+        'target': toNodeId,
+        'value': 1
+    })
+    with open('file.json', 'w') as outfile:
+        json.dump(data, outfile)
 
 def addHttp(a):
     a = str("http://wikipedia.org" + a)
