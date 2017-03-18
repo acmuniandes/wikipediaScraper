@@ -13,6 +13,8 @@ import random
 import threading
 import json
 
+lock = threading.Lock()
+
 class wikipediaPage:
     name = ''
     link = ''
@@ -56,17 +58,16 @@ def scrape(aUrl):
         scrape(selectedPage)
         ts = threading.Thread(target = scrape , args=[selectedPage] )
         tsh = threading.Thread(scrape, args=[newPage.nodes[4]])
-        # tsh.start()
-        # # ts.setName(selectedPage)
-        # ts.start()
+        tsh.start()
+        ts.setName(selectedPage)
+        ts.start()
     print(selectedPage)
     scrape(selectedPage)
     ts  = threading.Thread( target = scrape , args=[selectedPage] )
     tsc = threading.Thread(target = scrape , args=[newPage.nodes[floorNumber+1]])
-    # tsc.start()
-    # ts.setName(selectedPage)
-    # ts.start()
-
+    tsc.start()
+    ts.setName(selectedPage)
+    ts.start()
 
 
 def writePage(aPage):
@@ -76,14 +77,17 @@ def writePage(aPage):
         writer.writerow({'id':aPage.id, 'sons':aPage.sons, 'name': aPage.name , 'link':aPage.link, 'nodes':aPage.nodes })
 
 def addNode(newNodeId):
+    lock.acquire()
     data['nodes'].append({
         'id': newNodeId,
         'group': 1
     })
     with open('file.json', 'w') as outfile:
         json.dump(data, outfile)
+    lock.release()
 
 def addEdge(fromNodeId , toNodeId):
+    lock.acquire()
     data['links'].append({
         'source': fromNodeId,
         'target': toNodeId,
@@ -91,6 +95,7 @@ def addEdge(fromNodeId , toNodeId):
     })
     with open('file.json', 'w') as outfile:
         json.dump(data, outfile)
+    lock.release()
 
 def addHttp(a):
     a = str("http://wikipedia.org" + a)
