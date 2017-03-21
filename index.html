@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+
 <style>
 
 .links line {
@@ -13,52 +14,46 @@
 }
 
 </style>
+
 <svg width="5000" height="5000"></svg>
+
+
 <script src="https://d3js.org/d3.v4.min.js"></script>
+
+
 <script>
 
-var svg = d3.select("svg"),
-    width = +svg.attr("width"),
-    height = +svg.attr("height");
+var svg = d3.select("svg");
+    svg.width = +svg.attr("width");
+    svg.height = +svg.attr("height");
 
-var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-var simulation = d3.forceSimulation()
-    .force("link", d3.forceLink().id(function(d) { return d.id; }))
-    .force("charge", d3.forceManyBody())
-    .force("center", d3.forceCenter(width / 2, height / 2));
+var simulation = d3.forceSimulation();
+
+simulation.force("link", d3.forceLink().id(function(d) { return d.id; }));
+simulation.force("charge", d3.forceManyBody());
+simulation.force("center", d3.forceCenter(1500, 2000 / 2));
 
 d3.json("file.json", function(error, graph) {
   if (error) throw error;
 
-  var link = svg.append("g")
-      .attr("class", "links")
-    .selectAll("line")
-    .data(graph.links)
-    .enter().append("line")
-      .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
+  var link = svg.append("g").attr("class", "links").selectAll("line").data(graph.links).enter().append("line").attr("stroke-width", 1 );
 
-  var node = svg.append("g")
-      .attr("class", "nodes")
-    .selectAll("circle")
-    .data(graph.nodes)
-    .enter().append("circle")
-      .attr("r", 5)
-      .attr("fill", function(d) { return color(d.group); })
+  var node = svg.append("g").attr("class", "nodes").selectAll("circle").data(graph.nodes).enter().append("circle").attr("r", 4)
       .call(d3.drag()
           .on("start", dragstarted)
           .on("drag", dragged)
           .on("end", dragended));
 
-  node.append("title")
-      .text(function(d) { return d.id; });
+  node.append("title").text(function(d) { return d.id; });
 
-  simulation
-      .nodes(graph.nodes)
-      .on("tick", ticked);
+  simulation.nodes(graph.nodes);
+  simulation.on("tick", ticked);
 
+
+// agrega los links entre nodos. si lo quito solo se ven los nodos desconectados
   simulation.force("link")
-      .links(graph.links);
+  .links(graph.links);
 
   function ticked() {
     link

@@ -23,7 +23,7 @@ data = {}
 data['nodes'] = []
 data['links'] = []
 
-maxNodes = 2000
+maxNodes = 10
 currentNodes = 0
 
 initialUrl = "http://en.wikipedia.org/wiki/GitHub"
@@ -47,6 +47,8 @@ def scrape(aUrl):
     if currentNodes < maxNodes:
         toAddEdges = list( map( lambda x: addEdge(newPage.link , x ) , newPage.nodes ) )
         toAddNodes = list( map( lambda x: addNode(x, newPage.link) , newPage.nodes ) )
+        currentNodes = currentNodes + 1
+        print(currentNodes)
 
 
     randomNumber = random.randint(2,4)
@@ -55,13 +57,13 @@ def scrape(aUrl):
     selectedPage = newPage.nodes[floorNumber]
     if selectedPage == None:
         selectedPage = newPage.nodes[3]
-        # scrape(selectedPage)
+        scrape(selectedPage)
         ts = threading.Thread(target = scrape , args=[selectedPage] )
         tsh = threading.Thread(scrape, args=[newPage.nodes[4]])
         tsh.start()
         ts.start()
     print(selectedPage)
-    # scrape(selectedPage)
+    scrape(selectedPage)
     ts  = threading.Thread( target = scrape , args=[selectedPage] )
     tsc = threading.Thread(target = scrape , args=[newPage.nodes[floorNumber+1]])
     tsc.start()
@@ -69,53 +71,41 @@ def scrape(aUrl):
 
 
 def addInicio():
-    global currentNodes, maxNodes, theFile
-    if currentNodes < maxNodes:
-        print(currentNodes)
-        currentNodes = currentNodes+1
-        data['nodes'].append({
-            'id': "INICIO",
-            'group': 10
-        })
-        with open('file.json' , 'w') as outfile:
-            json.dump(data, outfile)
-        outfile.close()
+    data['nodes'].append({
+        'id': "INICIO",
+        'group': 10
+    })
+    with open('file.json' , 'w') as outfile:
+        json.dump(data, outfile)
+    outfile.close()
 
 
 def addNode(newNodeId, father):
-    global currentNodes, maxNodes, theFile
-    if currentNodes < maxNodes:
-        print(currentNodes)
-        currentNodes = currentNodes+1
-        data['nodes'].append({
-            'id': newNodeId,
-            'group': 1
-        })
-
-        data['links'].append({
-            'source': father,
-            'target': newNodeId,
-            'value': 20
-        })
-
-        with open('file.json' , 'w') as outfile:
-            json.dump(data, outfile)
-        outfile.close()
+    data['nodes'].append({
+        'id': newNodeId,
+        'group': 1
+    })
+    data['links'].append({
+        'source': father,
+        'target': newNodeId,
+        'value': 20
+    })
+    with open('file.json' , 'w') as outfile:
+        json.dump(data, outfile)
+    outfile.close()
 
 addNode(initialUrl , "INICIO")
 
 
 def addEdge(fromNodeId , toNodeId):
-    global currentNodes, maxNodes, theFile
-    if currentNodes < maxNodes:
-        data['links'].append({
-            'source': fromNodeId,
-            'target': toNodeId,
-            'value': 1
-            })
-        with open('file.json' , 'w') as outfile:
-            json.dump(data, outfile)
-        outfile.close()
+    data['links'].append({
+        'source': fromNodeId,
+        'target': toNodeId,
+        'value': 1
+        })
+    with open('file.json' , 'w') as outfile:
+        json.dump(data, outfile)
+    outfile.close()
 
 def getLink(a):
     if a.get("href")!=None and a.get("href").startswith("/wiki/") and not(a.get("href").endswith(".jpg" or ".svg" or ".jpeg")):
