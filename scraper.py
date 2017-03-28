@@ -23,7 +23,7 @@ data = {}
 data['nodes'] = []
 data['links'] = []
 
-maxNodes = 10
+maxNodes = 160
 currentNodes = 0
 
 initialUrl = "http://en.wikipedia.org/wiki/GitHub"
@@ -31,9 +31,10 @@ initialUrl = "http://en.wikipedia.org/wiki/GitHub"
 
 
 def scrape(aUrl):
+    print(aUrl)
+    # print(threading.activeCount())
     page = requests.get(aUrl).text
     soup = BeautifulSoup(page, 'lxml')
-
     newPage = wikipediaPage()
     newPage.link = aUrl
     newPage.name = soup.find('h1').text
@@ -48,27 +49,19 @@ def scrape(aUrl):
         toAddEdges = list( map( lambda x: addEdge(newPage.link , x ) , newPage.nodes ) )
         toAddNodes = list( map( lambda x: addNode(x, newPage.link) , newPage.nodes ) )
         currentNodes = currentNodes + 1
-        print(currentNodes)
+        print(currentNodes, maxNodes)
+        print(currentNodes<maxNodes)
+        explore = list(map(lambda x: addThread(x), newPage.nodes))
 
 
-    randomNumber = random.randint(2,4)
-    selectedNumber = math.floor(len(newPage.nodes)/(randomNumber))
-    floorNumber = math.floor( selectedNumber )
-    selectedPage = newPage.nodes[floorNumber]
-    if selectedPage == None:
-        selectedPage = newPage.nodes[3]
-        scrape(selectedPage)
-        ts = threading.Thread(target = scrape , args=[selectedPage] )
-        tsh = threading.Thread(scrape, args=[newPage.nodes[4]])
-        tsh.start()
+def addThread(urlToScrape):
+    global maxNodes,currentNodes
+    if currentNodes<maxNodes:
+        currentNodes = currentNodes + 1
+        print(currentNodes , maxNodes)
+        print(currentNodes<maxNodes)
+        ts  = threading.Thread( target = scrape , args=[urlToScrape] )
         ts.start()
-    print(selectedPage)
-    scrape(selectedPage)
-    ts  = threading.Thread( target = scrape , args=[selectedPage] )
-    tsc = threading.Thread(target = scrape , args=[newPage.nodes[floorNumber+1]])
-    tsc.start()
-    ts.start()
-
 
 def addInicio():
     data['nodes'].append({

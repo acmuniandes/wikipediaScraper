@@ -32,7 +32,7 @@ var simulation = d3.forceSimulation();
 
 simulation.force("link", d3.forceLink().id(function(d) { return d.id; }));
 simulation.force("charge", d3.forceManyBody());
-simulation.force("center", d3.forceCenter(1500, 2000 / 2));
+simulation.force("center", d3.forceCenter(2500, 2500));
 
 d3.json("file.json", function(error, graph) {
   if (error) throw error;
