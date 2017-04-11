@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from bs4 import BeautifulSoup
-import csv
-import html5lib
 from urllib.request import urlopen
-import os
 import requests
-import csv
 import lxml
-import math
-import random
 import threading
 import json
+import schedule
+import time
 
 class wikipediaPage:
     name = ''
@@ -23,16 +19,13 @@ data = {}
 data['nodes'] = []
 data['links'] = []
 
-maxNodes = 160
+maxNodes = 300
 currentNodes = 0
 
 initialUrl = "http://en.wikipedia.org/wiki/GitHub"
 
-
-
 def scrape(aUrl):
-    print(aUrl)
-    # print(threading.activeCount())
+    print("page to scrape: " , aUrl)
     page = requests.get(aUrl).text
     soup = BeautifulSoup(page, 'lxml')
     newPage = wikipediaPage()
@@ -46,13 +39,11 @@ def scrape(aUrl):
 
     global maxNodes, currentNodes
     if currentNodes < maxNodes:
-        toAddEdges = list( map( lambda x: addEdge(newPage.link , x ) , newPage.nodes ) )
+        # toAddEdges = list( map( lambda x: addEdge(newPage.link , x ) , newPage.nodes ) )
         toAddNodes = list( map( lambda x: addNode(x, newPage.link) , newPage.nodes ) )
         currentNodes = currentNodes + 1
-        print(currentNodes, maxNodes)
-        print(currentNodes<maxNodes)
+        print(currentNodes, "of" , maxNodes)
         explore = list(map(lambda x: addThread(x), newPage.nodes))
-
 
 def addThread(urlToScrape):
     global maxNodes,currentNodes
@@ -68,9 +59,7 @@ def addInicio():
         'id': "INICIO",
         'group': 10
     })
-    with open('file.json' , 'w') as outfile:
-        json.dump(data, outfile)
-    outfile.close()
+    writeJSON()
 
 
 def addNode(newNodeId, father):
@@ -83,29 +72,34 @@ def addNode(newNodeId, father):
         'target': newNodeId,
         'value': 20
     })
-    with open('file.json' , 'w') as outfile:
-        json.dump(data, outfile)
-    outfile.close()
-
-addNode(initialUrl , "INICIO")
-
-
-def addEdge(fromNodeId , toNodeId):
-    data['links'].append({
-        'source': fromNodeId,
-        'target': toNodeId,
-        'value': 1
-        })
-    with open('file.json' , 'w') as outfile:
-        json.dump(data, outfile)
-    outfile.close()
 
 def getLink(a):
     if a.get("href")!=None and a.get("href").startswith("/wiki/") and not(a.get("href").endswith(".jpg" or ".svg" or ".jpeg")):
         return str("http://wikipedia.org" + a.get("href") )
 
-addInicio()
+def writeJSON():
+    with open('file.json', 'w') as outfile:
+        json.dump(data, outfile)
+    outfile.close()
 
+def log():
+    print("number of active threads: " , threading.activeCount())
+    print("time: " ,  time.clock())
+    if threading.activeCount() < 20  :
+        print("VOY A ESCRIBIR")
+        writeJSON()
+
+
+
+addInicio()
+addNode(initialUrl , "INICIO")
+scrape(initialUrl)
+
+
+schedule.every(1).seconds.do(log)
+
+while True:
+    schedule.run_pending()
 
 tsc = threading.Thread(target = scrape , args=[initialUrl] )
 tsc.start()
